@@ -1,0 +1,42 @@
+<button onclick="startGame()">Start Game</button>
+<h1>{{ room_name }}</h1>
+<h2>{{ id }}</h2>
+
+<script>
+    deck = JSON.parse(`{{ deck|safe }}`);
+
+    function startGame() {
+        // Tell the server to close the game entry and start
+        fetch('{{url_for("start_game", room_name=room_name)}}');
+    }
+
+    function checkForUpdate() {
+        // Ping the server for an update
+        // If there are updates, loop every .5 seconds updating as we go
+        fetch('{{url_for("broadcast_hub", room_name=room_name)}}')
+            .then((response) => response.text().then((text) => {
+                let msgs = JSON.parse(text);
+                for (var i = 0; i < msgs.length; i++) {
+                    let msg = msgs[i];
+                    setTimeout(() => {
+                        // FIXME this should become uno logic later
+                        console.log(msg);
+                    }, 500 * i);
+                }
+        }));
+    }
+
+    function delayLoop(func, time) {
+        // Call func every time ms, waiting for func to complete before starting the next timer
+        func();
+        setTimeout(delayLoop, time, func, time);
+    }
+
+    // Check for game updates every .5 seconds
+    delayLoop(checkForUpdate, 500);
+
+    function broadcast(msg) {
+        // Send a message to the server
+        fetch('{{url_for("user_broadcast", room_name=room_name, msg="PLACE_MESSAGE_HERE")}}'.replace("PLACE_MESSAGE_HERE", msg));
+    }
+</script>
