@@ -75,10 +75,10 @@ def next_turn(room):
     # Incriment the turn timer
     room.turn += room.orientation
 
-    # Make sure the turn doesnt leave 1...len(room.players)
-    if room.turn <= 0:
+    # Make sure the turn doesnt leave 0...len(room.players)-1
+    if room.turn < 0:
         room.turn += len(room.players)
-    if room.turn > len(room.players):
+    if room.turn >= len(room.players):
         room.turn -= len(room.players)
 
 def play_card(room, room_player, move):

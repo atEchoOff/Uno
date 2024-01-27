@@ -144,7 +144,7 @@ def user_broadcast(room_name):
     room_player = Utils.room_player(session, room)
     
     # First, make sure the user can do that (its their turn)
-    if room_player.id == room.turn:
+    if room_player.id == room.players[room.turn].id:
         # Its the player's turn
         move = request.args.get("msg")
         if move == "draw":

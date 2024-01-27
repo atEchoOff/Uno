@@ -17,7 +17,7 @@ class Room(db.Model):
 
     # Current turn of the game
     # Incriments when someone plays, used to determine current player
-    turn: Mapped[int] = mapped_column(nullable=False, default=1)
+    turn: Mapped[int] = mapped_column(nullable=False, default=0)
 
     # Saves the current card to make sure users dont lie about the validity of the card they play
     current_card: Mapped[str] = mapped_column(nullable=True)
