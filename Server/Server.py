@@ -81,7 +81,10 @@ def game_room(room_name):
 
     # Let everyone know a player has joined
     # FIXME make it so users cant join twice
-    Utils.broadcast(room, f"USER:{player.name}")
+    Utils.broadcast(room, [f"USER:{player.name}"], commit=False, exclude=player)
+
+    # Tell the new user all the players currently in the room
+    Utils.broadcast(player, [f"USER:{_player.name}" for _player in room.players])
 
     return render_template("gameRoom.html", deck=str(player.deck).replace("'", '"'), room_name=room_name)
 
@@ -95,7 +98,7 @@ def start_game(room_name):
         room.active = True
         db.session.commit()
 
-        Utils.broadcast(room, "START")
+        Utils.broadcast(room, ["START"])
         return ""
     else:
         # The room is already active
@@ -106,21 +109,21 @@ def broadcast_hub(room_name):
     # pythonanywhere does not support SocketIO
     # Instead, users will poll this page
     # Each user for each game has a variable "turn" (client turn)
-    # Each game has a variable "turn" (server turn)
-    # If client < server, client has something to learn
+    # Each user element has an instruction set of instructions
+    # If turn(client) < len(instr_set), client has something to learn
     # Dump everything from the instruction set after the (client) turn to the user
     # Then, update the users turn
 
     room = Utils.room(room_name)
     room_player = Utils.room_player(session, room)
 
-    # Query server and client turns
+    # Query client turn
     client_turn = room_player.turn
-    server_turn = room.turn
-    if client_turn < server_turn:
+    instruction_set = room_player.instruction_set
+    if client_turn < len(instruction_set):
         # User is not up to date, reset their turn and send them the info
-        room_player.turn = server_turn
-        tosend = room.instruction_set[client_turn:]
+        room_player.turn = len(instruction_set)
+        tosend = instruction_set[client_turn:]
         db.session.commit()
         return json.dumps(tosend)
     else:
@@ -138,9 +141,13 @@ def user_broadcast(room_name):
     if room_player.id == turn:
         # Its the player's turn
         # Figure out their moves
-        moves = request.args.get("msg")
-        Utils.broadcast(room, moves)
+        moves = request.args.get("msg").split("/")
+        Utils.broadcast(room, moves, commit=False)
         # FIXME uno logic
+
+        # Incriment the turn timer
+        room.turn += 1
+        db.session.commit()
         return ""
     else:
         abort(404)

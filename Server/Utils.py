@@ -62,8 +62,20 @@ def room_player(session, room, _404=True, name=None):
     
     return RoomPlayer.query.filter_by(id=session['game_id'][room.name]).one_or_404()
 
-def broadcast(room, msg):
-    # Broadcast a message
-    room.instruction_set.append(msg)
-    room.turn += 1
-    db.session.commit()
+def broadcast(room_or_player, msgs, commit=True, exclude=None):
+    # Broadcast a message to the room or to the player
+    # If room_or_player is a room, broadcast to all players in room
+    # Otherwise, just broadcast to the player
+    if isinstance(room_or_player, Room):
+        for player in room_or_player.players:
+            if player == exclude:
+                continue
+            player.instruction_set.extend(msgs)
+        if commit:
+            db.session.commit()
+        return
+    
+    # Otherwise, assume the object is a player
+    room_or_player.instruction_set.extend(msgs)
+    if commit:
+        db.session.commit()

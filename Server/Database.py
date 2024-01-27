@@ -26,9 +26,6 @@ class Room(db.Model):
     # Whether or not the game is in session
     active: Mapped[bool] = mapped_column(nullable=False, default=False)
 
-    # Save the total set of instructions in the game
-    instruction_set = mapped_column(MutableList.as_mutable(PickleType), nullable=False, default=[])
-
     # Save whether or not a +2 is being stacked. If null, they cannot be stacked in this game
     p2_stack: Mapped[bool] = mapped_column(nullable=True)
 
@@ -53,6 +50,9 @@ class RoomPlayer(db.Model):
 
     # Saves the turn according to the client
     turn: Mapped[int] = mapped_column(nullable=False, default=0)
+
+    # Save the total set of instructions in the game for this player
+    instruction_set = mapped_column(MutableList.as_mutable(PickleType), nullable=False, default=[])
 
     room_id = mapped_column(ForeignKey("room_table.id"))
     room: Mapped["Room"] = relationship(back_populates="players")
