@@ -29,6 +29,18 @@ class Room(db.Model):
     # Save the total set of instructions in the game
     instruction_set = mapped_column(MutableList.as_mutable(PickleType), nullable=False, default=[])
 
+    # Save whether or not a +2 is being stacked. If null, they cannot be stacked in this game
+    p2_stack: Mapped[bool] = mapped_column(nullable=True)
+
+    # Save if foreign cards (skip, reverse) are allowed on a plus 2 while stacking
+    p2_allow_foreign: Mapped[bool] = mapped_column(nullable=False, default=False)
+
+    # Save whether or not a +4 is being stacked. If null, they cannot be stacked in this game
+    p4_stack: Mapped[bool] = mapped_column(nullable=True)
+
+    # Save if foreign cards (skip, reverse) are allowed on a plus 4 while stacking
+    p4_allow_foreign: Mapped[bool] = mapped_column(nullable=False, default=False)
+
 class RoomPlayer(db.Model):
     __tablename__ = "player_table"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
