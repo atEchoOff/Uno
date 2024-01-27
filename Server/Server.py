@@ -16,7 +16,7 @@ sess.init_app(app)
 from Database import *
 init_db(app)
 
-import Utils
+import Utils, Uno
 
 @app.route('/', methods=["GET", "POST"])
 def home():
@@ -86,7 +86,7 @@ def game_room(room_name):
     # Tell the new user all the players currently in the room
     Utils.broadcast(player, [f"USER:{_player.name}" for _player in room.players])
 
-    return render_template("gameRoom.html", deck=str(player.deck).replace("'", '"'), room_name=room_name)
+    return render_template("gameRoom.html", room_name=room_name)
 
 @app.route('/start_game/<room_name>')
 def start_game(room_name):
@@ -96,9 +96,16 @@ def start_game(room_name):
 
     if not room.active:
         room.active = True
-        db.session.commit()
 
-        Utils.broadcast(room, ["START"])
+        # Give everyone a deck
+        for player in room.players:
+            deck = [Uno.random_card() for _ in range(7)]
+            player.deck = deck
+            Utils.broadcast(player, ["CARDS:" + json.dumps(deck)], commit=False)
+
+        # Tell everyone the game has started, the current card, and who is up
+        room.current_card = Uno.random_card(numerical_only=True)
+        Utils.broadcast(room, ["START", f"CARD:{room.current_card}", "TURN:1"])
         return ""
     else:
         # The room is already active
@@ -137,16 +144,46 @@ def user_broadcast(room_name):
     room_player = Utils.room_player(session, room)
     
     # First, make sure the user can do that (its their turn)
-    turn = room.turn % len(room.players) + 1
-    if room_player.id == turn:
+    if room_player.id == room.turn:
         # Its the player's turn
-        # Figure out their moves
-        moves = request.args.get("msg").split("/")
-        Utils.broadcast(room, moves, commit=False)
-        # FIXME uno logic
+        move = request.args.get("msg")
+        if move == "draw":
+            # User requests to draw cards
+            # Make sure they can (if they just did, that move is illegal)
+            if room_player.instruction_set[-1].startswith("DRAW"):
+                # You cant draw!
+                abort(404)
 
-        # Incriment the turn timer
-        room.turn += 1
+            cards = Uno.draw_cards(room)
+
+            # Add the cards to the user's deck
+            room_player.deck.extend(cards)
+
+            # Give the cards to the player
+            Utils.broadcast(room_player, [f"DRAW:{json.dumps(cards)}"], commit=False)
+
+            # Tell everyone else the user drew however many cards
+            Utils.broadcast(room, [f"DREW:{len(cards)}"], exclude=room_player, commit=False)
+        elif move == "pass":
+            # FIXME this one is controversial
+            # If the user asks to pass... pass
+            # Move to the next turn and tell everyone
+            Uno.next_turn(room)
+            Utils.broadcast(room, [f"TURN:{room.turn}"], commit=False)
+
+        elif Uno.card_can_be_played(room, room_player, move[:2]):
+            # Card played is legal
+            # Play the card and tell everyone about it
+            Uno.play_card(room, room_player, move)
+            Utils.broadcast(room, [f"CARD:{move}"], commit=False)
+
+            # Move to the next turn and tell everyone
+            Uno.next_turn(room)
+            Utils.broadcast(room, [f"TURN:{room.turn}"], commit=False)
+        else:
+            # Move wasnt legal and wasnt a draw
+            abort(404)
+
         db.session.commit()
         return ""
     else:

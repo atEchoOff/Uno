@@ -1,13 +1,45 @@
-<button onclick="startGame()">Start Game</button>
+<button onclick="startGame()" id="game-controller">Start Game</button>
+<div id="card-container"></div>
 <h1>{{ room_name }}</h1>
-<h2>{{ id }}</h2>
+<h2 id="current-card"></h2>
 
 <script>
-    deck = JSON.parse(`{{ deck|safe }}`);
+    let cardContainer = document.getElementById("card-container");
+    let currentCard = document.getElementById("current-card");
+    let gameController = document.getElementById("game-controller");
 
     function startGame() {
         // Tell the server to close the game entry and start
         fetch('{{url_for("start_game", room_name=room_name)}}');
+    }
+
+    function cardPressed(e) {
+        // "hard-pressed"... Get it?
+        // Card was pressed, send off to server
+        let cardValue = e.target.textContent;
+        if (e.target.textContent.startsWith("w")) {
+            // Its a wild card, how fun! Ask the user for their desired color
+            let color = prompt("What color wild?", "Color (r/y/g/b)");
+            cardValue += color;
+
+        }
+        broadcast(cardValue).then((response) => {
+            if (response.ok) {
+                // Card was played! Remove card from viewer
+                e.target.remove();
+            } else {
+                // There was a 404! Print it to the consone
+                console.log("Error when pressing card: 404");
+            }
+        })
+    }
+
+    function addCard(cardName) {
+        // Add a card to the card container
+        let card = document.createElement("button");
+        card.textContent = cardName;
+        card.addEventListener("click", cardPressed);
+        cardContainer.appendChild(card);
     }
 
     function checkForUpdate() {
@@ -19,8 +51,37 @@
                 for (var i = 0; i < msgs.length; i++) {
                     let msg = msgs[i];
                     setTimeout(() => {
-                        // FIXME this should become uno logic later
-                        console.log(msg);
+                        if (msg.startsWith("CARDS:")) {
+                            // The rest of the string is our cards. 
+                            let cards = JSON.parse(msg.substring(6));
+                            for (var i = 0; i < cards.length; i++) {
+                                addCard(cards[i]);
+                            }
+                        } else if (msg.startsWith("CARD:")) {
+                            // The current card was changed
+                            currentCard.innerText = msg.substring(5);
+                        } else if (msg.startsWith("DRAW:")) {
+                            // The rest of the string is a list of cards we draw
+                            let cards = JSON.parse(msg.substring(5));
+                            for (var i = 0; i < cards.length; i++) {
+                                addCard(cards[i]);
+                            }
+                        } else if (msg.startsWith("START")) {
+                            // Game started, replace Start Game button with Draw Card
+                            document.removeEventListener("click", gameController);
+                            gameController.addEventListener("click", () => {
+                                broadcast("draw").then((response) => {
+                                    if (!response.ok) {
+                                        // There was a 404! Print it to the console
+                                        console.log("Error when drawing card: 404");
+                                    }
+                                })
+                            });
+                            gameController.textContent = "Draw Card";
+                        } else {
+                            // Just print the message
+                            console.log(msg);
+                        }
                     }, 500 * i);
                 }
         }));
@@ -35,8 +96,8 @@
     // Check for game updates every .5 seconds
     delayLoop(checkForUpdate, 500);
 
-    function broadcast(msg) {
+    async function broadcast(msg) {
         // Send a message to the server
-        fetch('{{url_for("user_broadcast", room_name=room_name, msg="PLACE_MESSAGE_HERE")}}'.replace("PLACE_MESSAGE_HERE", msg));
+        return fetch('{{url_for("user_broadcast", room_name=room_name, msg="PLACE_MESSAGE_HERE")}}'.replace("PLACE_MESSAGE_HERE", encodeURIComponent(msg)));
     }
 </script>

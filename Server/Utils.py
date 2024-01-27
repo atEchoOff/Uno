@@ -51,8 +51,7 @@ def room_player(session, room, _404=True, name=None):
         if _404 or name == None:
             abort(404)
         
-        # FIXME temporary deck
-        room_player = RoomPlayer(name=name, deck=['11'])
+        room_player = RoomPlayer(name=name)
         db.session.add(room_player)
         room.players.append(room_player)
         

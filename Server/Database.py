@@ -16,9 +16,8 @@ class Room(db.Model):
     players: Mapped[List["RoomPlayer"]] = relationship(back_populates="room")
 
     # Current turn of the game
-    # Incriments when someone plays, and to determine the current player, we do turn % len(players)
-    # Also used to determine the current step in the broadcast queue
-    turn: Mapped[int] = mapped_column(nullable=False, default=0)
+    # Incriments when someone plays, used to determine current player
+    turn: Mapped[int] = mapped_column(nullable=False, default=1)
 
     # Saves the current card to make sure users dont lie about the validity of the card they play
     current_card: Mapped[str] = mapped_column(nullable=True)
@@ -26,17 +25,26 @@ class Room(db.Model):
     # Whether or not the game is in session
     active: Mapped[bool] = mapped_column(nullable=False, default=False)
 
-    # Save whether or not a +2 is being stacked. If null, they cannot be stacked in this game
+    # Save the total value of the +2 currently in game
+    p2_value: Mapped[int] = mapped_column(nullable=False, default=0)
+
+    # Save the total value of the +4 currently in game
+    p4_value: Mapped[int] = mapped_column(nullable=False, default=0)
+
+    # Setting for if +2s can be stacked
     p2_stack: Mapped[bool] = mapped_column(nullable=True)
 
-    # Save if foreign cards (skip, reverse) are allowed on a plus 2 while stacking
+    # Setting for if foreign cards (skip, reverse) are allowed on a plus 2 while stacking
     p2_allow_foreign: Mapped[bool] = mapped_column(nullable=False, default=False)
 
-    # Save whether or not a +4 is being stacked. If null, they cannot be stacked in this game
+    # Setting for if +4 can be stacked
     p4_stack: Mapped[bool] = mapped_column(nullable=True)
 
-    # Save if foreign cards (skip, reverse) are allowed on a plus 4 while stacking
+    # Setting for if foreign cards (skip, reverse) are allowed on a plus 4 while stacking
     p4_allow_foreign: Mapped[bool] = mapped_column(nullable=False, default=False)
+
+    # Save the orientation of the game
+    orientation: Mapped[int] = mapped_column(nullable=False, default=1)
 
 class RoomPlayer(db.Model):
     __tablename__ = "player_table"
@@ -46,7 +54,7 @@ class RoomPlayer(db.Model):
     name: Mapped[str] = mapped_column(nullable=False)
 
     # Save the user's deck
-    deck = mapped_column(MutableList.as_mutable(PickleType), nullable=False)
+    deck = mapped_column(MutableList.as_mutable(PickleType), nullable=True)
 
     # Saves the turn according to the client
     turn: Mapped[int] = mapped_column(nullable=False, default=0)
