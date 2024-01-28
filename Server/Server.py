@@ -105,7 +105,7 @@ def start_game(room_name):
 
         # Tell everyone the game has started, the current card, and who is up
         room.current_card = Uno.random_card(numerical_only=True)
-        Utils.broadcast(room, ["START", f"CARD:{room.current_card}", "TURN:1"])
+        Utils.broadcast(room, ["START", f"CARD:{room.current_card}", f"TURN:{room.players[room.turn].id}"])
         return ""
     else:
         # The room is already active
