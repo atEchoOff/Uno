@@ -134,13 +134,15 @@
 
                         } else if (msg.startsWith("CARD:")) {
                             // The current card was changed
-                            let card = getCard(msg.substring(5), false);
+                            let cardName = msg.substring(5);
+                            let card = getCard(cardName, false);
                             currentCardContainer.innerHTML = "";
                             currentCardContainer.appendChild(card);
 
                             // Decrement the current user's count, if the game is active
                             // (Dont decrement count if this card is the starting card)
-                            if (currUserId != -1) {
+                            // Also, dont decrement if the card is virtual (a colored wild card)
+                            if (currUserId != -1 && !["yw", "gw", "bw", "rw", "yp", "gp", "bp", "rp"].includes(cardName)) {
                                 numCards[currUserId] -= 1;
                             }
                         } else if (msg.startsWith("DRAW:")) {
