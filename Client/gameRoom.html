@@ -100,6 +100,8 @@
             let p = document.createElement("p");
             if (currUserId == -1) {
                 p.innerText = `${uname}`;
+            } else if (currUserId == id) {
+                p.innerHTML = `<b>${uname}: ${numCards[id]}</b>`;
             } else {
                 p.innerText = `${uname}: ${numCards[id]}`;
             }

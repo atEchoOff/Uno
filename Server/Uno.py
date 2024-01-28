@@ -1,6 +1,7 @@
 import random
 from flask import abort
 from Database import db
+import Utils
 
 suits = "wrbgy"
 
@@ -88,6 +89,9 @@ def play_card(room, room_player, move):
     if move[0] == "w":
         # Wild card. The user's next request should be a color
         # Abort for now, but let the user update with a color on their next request
+        # Also, tell everyone the wild was played
+        # FIXME I dont like that the database is being accessed here
+        Utils.broadcast(room, [f"CARD:{move}"], commit=False)
         room_player.wild_card = move
         db.session.commit()
         abort(418)
