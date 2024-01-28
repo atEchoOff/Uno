@@ -1,5 +1,6 @@
 import random
 from flask import abort
+from Database import db
 
 suits = "wrbgy"
 
@@ -83,16 +84,13 @@ def next_turn(room):
 
 def play_card(room, room_player, move):
     card_value = move[1]
-    simulated_move = move # The color and value (get rid of wild suit and replace with color)
     
     if move[0] == "w":
-        # Wild card. Make sure it came with a color
-        # FIXME this is temporary, it would be better to send in two requests
-        if len(move) == 2:
-            # There were no details!
-            abort(404)
-        
-        simulated_move = move[2] + card_value
+        # Wild card. The user's next request should be a color
+        # Abort for now, but let the user update with a color on their next request
+        room_player.wild_card = move
+        db.session.commit()
+        abort(418)
 
     if room.p2_value > 0:
         # A +2 is down, figure out the new value based on what they played
@@ -129,5 +127,5 @@ def play_card(room, room_player, move):
                 room.orientation *= -1
 
     # Now, just set the current card, remove from players deck, and move on
-    room.current_card = simulated_move
-    room_player.deck.remove(move[:2])
+    room.current_card = move
+    room_player.deck.remove(move)

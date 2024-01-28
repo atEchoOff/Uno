@@ -62,6 +62,9 @@ class RoomPlayer(db.Model):
     # Save the total set of instructions in the game for this player
     instruction_set = mapped_column(MutableList.as_mutable(PickleType), nullable=False, default=[])
 
+    # If the user just played a wild card, this is the string of the card
+    wild_card : Mapped[str] = mapped_column(nullable=True)
+
     room_id = mapped_column(ForeignKey("room_table.id"))
     room: Mapped["Room"] = relationship(back_populates="players")
 

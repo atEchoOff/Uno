@@ -81,12 +81,12 @@ def game_room(room_name):
 
     # Let everyone know a player has joined
     # FIXME make it so users cant join twice
-    Utils.broadcast(room, [f"USER:{player.name}"], commit=False, exclude=player)
+    Utils.broadcast(room, [f"USER:{player.name}/{player.id}"], commit=False, exclude=player)
 
     # Tell the new user all the players currently in the room
-    Utils.broadcast(player, [f"USER:{_player.name}" for _player in room.players])
+    Utils.broadcast(player, [f"USER:{_player.name}/{_player.id}" for _player in room.players])
 
-    return render_template("gameRoom.html", room_name=room_name)
+    return render_template("gameRoom.html", room_name=room_name, id=player.id)
 
 @app.route('/start_game/<room_name>')
 def start_game(room_name):
@@ -147,6 +147,18 @@ def user_broadcast(room_name):
     if room_player.id == room.players[room.turn].id:
         # Its the player's turn
         move = request.args.get("msg")
+
+        if room_player.wild_card:
+            # User just played a wild card. This move should be a color. Add a simulated card for this color
+            # To the deck, and proceed. 
+            if move not in "yrgb":
+                # Move color is not valid
+                abort(404)
+            
+            # Replace the wild card with a colored version of it
+            move = move + room_player.wild_card[1]
+            room_player.deck[room_player.deck.index(room_player.wild_card)] = move
+
         if move == "draw":
             # User requests to draw cards
             # Make sure they can (if they just did, that move is illegal)
@@ -166,20 +178,31 @@ def user_broadcast(room_name):
             Utils.broadcast(room, [f"DREW:{len(cards)}"], exclude=room_player, commit=False)
         elif move == "pass":
             # FIXME this one is controversial
-            # If the user asks to pass... pass
-            # Move to the next turn and tell everyone
-            Uno.next_turn(room)
-            Utils.broadcast(room, [f"TURN:{room.turn}"], commit=False)
+            # Only let the user pass if they have drawn in this turn
+            if not room_player.instruction_set[-1].startswith("DRAW"):
+                # You cant pass!
+                abort(404)
 
-        elif Uno.card_can_be_played(room, room_player, move[:2]):
-            # Card played is legal
+            # Dont let the player pass during a +2 or +4 event
+            if room.p2_value > 0 or room.p4_value > 0:
+                # Cheater! You cant pass when theres a +2 or +4
+                abort(404)
+
+            Uno.next_turn(room)
+            Utils.broadcast(room, [f"TURN:{room.players[room.turn].id}"], commit=False)
+
+        elif room_player.wild_card or Uno.card_can_be_played(room, room_player, move):
+            # Card played is legal, or a wild card is being moved in
             # Play the card and tell everyone about it
             Uno.play_card(room, room_player, move)
             Utils.broadcast(room, [f"CARD:{move}"], commit=False)
 
             # Move to the next turn and tell everyone
             Uno.next_turn(room)
-            Utils.broadcast(room, [f"TURN:{room.turn}"], commit=False)
+            Utils.broadcast(room, [f"TURN:{room.players[room.turn].id}"], commit=False)
+
+            # The user is no longer playing a wild card!
+            room_player.wild_card = None
         else:
             # Move wasnt legal and wasnt a draw
             abort(404)

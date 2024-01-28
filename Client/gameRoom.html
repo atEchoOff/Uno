@@ -1,12 +1,51 @@
-<button onclick="startGame()" id="game-controller">Start Game</button>
-<div id="card-container"></div>
-<h1>{{ room_name }}</h1>
-<h2 id="current-card"></h2>
+<head>
+    <link rel="stylesheet" href="{{url_for('static', filename='style/gameRoom.css')}}">
+</head>
+
+<div id="card-container">
+    <p id="pass">pass</p>
+</div>
+<div id="player-container"></div>
+<div id="table-container">
+    <div id="deck-container"></div>
+    <div id="current-card-container"></div>
+</div>
+<div id="opposing-player-container"></div>
 
 <script>
+    let myId = {{ id }};
+    let numCards = {}; // The number of cards belonging to each player id
+    let idToUserName = {}; // Map of server ids to usernames
+
     let cardContainer = document.getElementById("card-container");
-    let currentCard = document.getElementById("current-card");
-    let gameController = document.getElementById("game-controller");
+    let currentCardContainer = document.getElementById("current-card-container");
+    let playerContainer = document.getElementById("player-container");
+    let opposingPlayerContainer = document.getElementById("opposing-player-container");
+    let deckContainer = document.getElementById("deck-container");
+    let pass = document.getElementById("pass");
+
+    pass.addEventListener("click", () => {
+        broadcast("pass");
+    });
+
+    // Save some game stats from the server
+    let p2_value = 0;
+    let p4_value = 0;
+    let currUserId = -1;
+
+    function getCard(cardName, interactable) {
+        // Return an element with specific cardName (image)
+        let card = document.createElement("img");
+        card.src = "{{url_for('static', filename='UnoCards/CARD_TYPE.png')}}".replace("CARD_TYPE", cardName);
+        card.classList.add("uno-card");
+        card.name = cardName;
+        if (interactable) {
+            // If we click the card, try to play it
+            card.addEventListener("click", cardPressed);
+            card.style.cursor = "pointer";
+        }
+        return card;
+    }
 
     function startGame() {
         // Tell the server to close the game entry and start
@@ -16,16 +55,18 @@
     function cardPressed(e) {
         // "hard-pressed"... Get it?
         // Card was pressed, send off to server
-        let cardValue = e.target.textContent;
-        if (e.target.textContent.startsWith("w")) {
-            // Its a wild card, how fun! Ask the user for their desired color
-            let color = prompt("What color wild?", "Color (r/y/g/b)");
-            cardValue += color;
-
-        }
+        let cardValue = e.target.name;
+        console.log(cardValue);
         broadcast(cardValue).then((response) => {
             if (response.ok) {
                 // Card was played! Remove card from viewer
+                e.target.remove();
+            } else if (response.status == 418) {
+                // Server is waiting for wild color, hand it off
+                let color = prompt("What color wild?", "Color (r/y/g/b)");
+                broadcast(color);
+
+                // Remove the wild card, we are done with it
                 e.target.remove();
             } else {
                 // There was a 404! Print it to the consone
@@ -34,12 +75,36 @@
         })
     }
 
-    function addCard(cardName) {
-        // Add a card to the card container
-        let card = document.createElement("button");
-        card.textContent = cardName;
-        card.addEventListener("click", cardPressed);
-        cardContainer.appendChild(card);
+    function updateOpposingPlayerWindow() {
+        // Update the number of cards displayed at the top to the currPlayerId's number of cards
+        // Make sure this function only runs under valid conditions
+        if (currUserId == -1) {
+            return;
+        } else if (numCards[currUserId] == -1) {
+            return;
+        }
+
+        if (opposingPlayerContainer.childElementCount != numCards[currUserId]) {
+            opposingPlayerContainer.innerHTML = "";
+            for (var i = 0; i < numCards[currUserId]; i++) {
+                opposingPlayerContainer.appendChild(getCard("back", false));
+            }
+        }
+    }
+
+    function updatePlayerStats() {
+        // Update the player stats screen to the left
+        // At the beginning of the game, dont show the internal "-1" cards, thats ugly
+        playerContainer.innerHTML = "";
+        for (let [id, uname] of Object.entries(idToUserName)) {
+            let p = document.createElement("p");
+            if (currUserId == -1) {
+                p.innerText = `${uname}`;
+            } else {
+                p.innerText = `${uname}: ${numCards[id]}`;
+            }
+            playerContainer.appendChild(p);
+        }
     }
 
     function checkForUpdate() {
@@ -55,21 +120,49 @@
                             // The rest of the string is our cards. 
                             let cards = JSON.parse(msg.substring(6));
                             for (var i = 0; i < cards.length; i++) {
-                                addCard(cards[i]);
+                                let card = getCard(cards[i], true);
+                                cardContainer.appendChild(card);
+                                opposingPlayerContainer.appendChild(getCard("back", false));
                             }
+
+                            // Loop through each numCards element, and set their cards to the number of cards we got
+                            for (var id in numCards) {
+                                numCards[id] = cards.length;
+                            }
+
                         } else if (msg.startsWith("CARD:")) {
                             // The current card was changed
-                            currentCard.innerText = msg.substring(5);
+                            let card = getCard(msg.substring(5), false);
+                            currentCardContainer.innerHTML = "";
+                            currentCardContainer.appendChild(card);
+
+                            // Decrement the current user's count, if the game is active
+                            // (Dont decrement count if this card is the starting card)
+                            if (currUserId != -1) {
+                                numCards[currUserId] -= 1;
+                            }
                         } else if (msg.startsWith("DRAW:")) {
                             // The rest of the string is a list of cards we draw
                             let cards = JSON.parse(msg.substring(5));
                             for (var i = 0; i < cards.length; i++) {
-                                addCard(cards[i]);
+                                let card = getCard(cards[i], true);
+                                cardContainer.appendChild(card);
                             }
+
+                            // Add the number of drawn cards to the count keeper
+                            numCards[myId] += cards.length;
+
+                            // After drawing, user can pass
+                            // FIXME is that true after +2 or +4?
+                            pass.style.visibility = "visible";
+
+                            // User drew cards, any +2 or +4 values are gone
+                            p2_value = 0; p4_value = 0;
                         } else if (msg.startsWith("START")) {
                             // Game started, replace Start Game button with Draw Card
-                            document.removeEventListener("click", gameController);
-                            gameController.addEventListener("click", () => {
+                            baseCard.removeEventListener("click", startGame);
+                            baseCard.src = "{{url_for('static', filename='UnoCards/DrawBack.png')}}";
+                            baseCard.addEventListener("click", () => {
                                 broadcast("draw").then((response) => {
                                     if (!response.ok) {
                                         // There was a 404! Print it to the console
@@ -77,11 +170,33 @@
                                     }
                                 })
                             });
-                            gameController.textContent = "Draw Card";
+                        } else if (msg.startsWith("TURN:")) {
+                            // FIXME here we will check if its my turn etc
+                            // Hide the pass option
+                            pass.style.visibility = "hidden";
+                            currUserId = parseInt(msg.substring(5));
+
+                        } else if (msg.startsWith("USER:")) {
+                            // Theres a new user, save their number of cards
+                            // Here, we save number of cards as -1, they will be overwritten when we get our cards
+                            let [uname, id] = msg.substring(5).split("/");
+                            idToUserName[id] = uname;
+                            numCards[id] = -1;
+                        } else if (msg.startsWith("DREW:")) {
+                            // Add the number of drawn cards to the user's count
+                            numCards[currUserId] += parseInt(msg.substring(5));
                         } else {
                             // Just print the message
                             console.log(msg);
                         }
+
+                        // Update the opposing player view, if its not my turn (keep previous player up otherwise)
+                        if (currUserId != myId) {
+                            updateOpposingPlayerWindow();
+                        }
+
+                        // Update the player stats to the left
+                        updatePlayerStats();
                     }, 500 * i);
                 }
         }));
@@ -100,4 +215,12 @@
         // Send a message to the server
         return fetch('{{url_for("user_broadcast", room_name=room_name, msg="PLACE_MESSAGE_HERE")}}'.replace("PLACE_MESSAGE_HERE", encodeURIComponent(msg)));
     }
+
+    // Here, we create base card. Base card is the start game button, and then the draw card button
+    let baseCard = getCard("StartBack", false);
+    deckContainer.appendChild(baseCard);
+
+    // Start the game when we click on the base card (this is overridden in the START listener)
+    baseCard.addEventListener("click", startGame);
+    baseCard.style.cursor = "pointer";
 </script>
