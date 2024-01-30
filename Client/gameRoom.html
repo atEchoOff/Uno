@@ -32,6 +32,8 @@
     let p2_value = 0;
     let p4_value = 0;
     let currUserId = -1;
+    let p2_allow_foreign = 0;
+    let p4_allow_foreign = 0; // FIXME impliment this
 
     function getCard(cardName, interactable) {
         // Return an element with specific cardName (image)
@@ -136,6 +138,65 @@
         }
     }
 
+    function cardCanBePlayed(card) {
+        // Check if new_card can be played on this game
+        if (myId != currUserId) {
+            // Its not your turn
+            return false;
+        }
+
+        let room_card = currentCardContainer.firstChild.name;
+        [room_suit, room_val] = room_card;
+        [card_suit, card_val] = card;
+        
+        if (p2_value == 0 && p4_value == 0) {
+            // Standard gameflow
+            if (card_suit == "w") {
+                return true;
+            }
+            
+            return room_suit == card_suit || room_val == card_val;
+        }
+        
+        if (p2_value > 0) {
+            // A +2 is in action
+            if (p2_allow_foreign) {
+                return Set("r", "+", "s").includes(card_val);
+            } else {
+                return card_val == "+";
+            }
+        }
+            
+        if (p4_value > 0) {
+            // A +4 is in action
+            if (p4_allow_foreign) {
+                return Set("r", "p", "s").includes(card_val);
+            } else {
+                return card_val == "p";
+            }
+        }
+
+        return false;
+    }
+
+    function changeCardStatuses() {
+        // Change the status of each card, darken it if we cant play it
+        let cards = cardContainer.children;
+        for (c of cards) {
+            if (!c.name || cardCanBePlayed(c.name)) {
+                c.classList.remove("dark");
+            } else {
+                c.classList.add("dark");
+            }
+        }
+
+        if (myId == currUserId) {
+            baseCard.classList.remove("dark");
+        } else {
+            baseCard.classList.add("dark");
+        }
+    }
+
     function handleServerMsg(msg) {
         if (msg.startsWith("CARDS:")) {
             // The rest of the string is our cards. 
@@ -158,6 +219,14 @@
             currentCardContainer.innerHTML = "";
             currentCardContainer.appendChild(card);
 
+            if (cardName.endsWith("+")) {
+                // +2
+                p2_value += 2
+            } else if (cardName.endsWith("p")) {
+                // +4
+                p4_value += 4
+            }
+
             // Decrement the current user's count, if the game is active
             // (Dont decrement count if this card is the starting card)
             // Also, dont decrement if the card is virtual (a colored wild card)
@@ -174,6 +243,9 @@
 
             // Add the number of drawn cards to the count keeper
             numCards[myId] += cards.length;
+
+            // Update the card statuses just in cast these are dark
+            changeCardStatuses();
 
             // After drawing, user can pass
             // FIXME is that true after +2 or +4?
@@ -198,6 +270,8 @@
             // Hide the pass option
             pass.style.visibility = "hidden";
             currUserId = parseInt(msg.substring(5));
+
+            changeCardStatuses();
 
         } else if (msg.startsWith("USER:")) {
             // Theres a new user, save their number of cards
