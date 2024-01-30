@@ -140,3 +140,63 @@ body {
     filter: brightness(20%);
     cursor: default !important;
 }
+
+#color-picker {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    z-index:9999;
+    cursor:pointer;
+    visibility:hidden; /* Display when user is picking a color */
+
+    /* Place it directly on top of the table FIXME make this better by making table a class */
+    position:absolute;
+    left:0;
+    right:0;
+    top:0;
+    bottom:0;
+    margin:auto;
+
+    width:30%;
+
+    height:25%;
+
+    overflow:hidden;
+}
+
+/* Inner divs */
+#red {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 50%;
+    height: 50%;
+    background-color: #d40000;
+}
+
+#blue {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 50%;
+    height: 50%;
+    background-color: #2a7fff;
+}
+
+#yellow {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 50%;
+    height: 50%;
+    background-color: #ffcc00;
+}
+
+#green {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 50%;
+    height: 50%;
+    background-color: #2ca05a;
+}

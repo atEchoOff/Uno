@@ -12,6 +12,13 @@
 </div>
 <div id="opposing-player-container"></div>
 
+<div id="color-picker">
+    <div id="red"></div>
+    <div id="blue"></div>
+    <div id="yellow"></div>
+    <div id="green"></div>
+</div>
+
 <script>
     let myId = {{ id }};
     let numCards = {}; // The number of cards belonging to each player id
@@ -23,10 +30,19 @@
     let opposingPlayerContainer = document.getElementById("opposing-player-container");
     let deckContainer = document.getElementById("deck-container");
     let pass = document.getElementById("pass");
+    let colorPicker = document.getElementById("color-picker");
 
     pass.addEventListener("click", () => {
         broadcast("pass");
     });
+
+    let colorPickerCorners = colorPicker.children;
+    for (let colorElement of colorPickerCorners) {
+        colorElement.addEventListener("click", (e) => {
+            broadcast(e.target.id[0]); // On click, broadcast the first letter of the color
+            colorPicker.style.visibility = ""; // Revert back to hidden
+        });
+    };
 
     // Save some game stats from the server
     let p2_value = 0;
@@ -91,9 +107,8 @@
                 // Card was played! Remove card from viewer
                 e.target.remove();
             } else if (response.status == 418) {
-                // Server is waiting for wild color, hand it off
-                let color = prompt("What color wild?", "Color (r/y/g/b)");
-                broadcast(color);
+                // Server is waiting for wild color, show the color picker
+                colorPicker.style.visibility = "visible";
 
                 // Remove the wild card, we are done with it
                 e.target.remove();
@@ -244,15 +259,15 @@
             // Add the number of drawn cards to the count keeper
             numCards[myId] += cards.length;
 
+            // User drew cards, any +2 or +4 values are gone
+            p2_value = 0; p4_value = 0;
+
             // Update the card statuses just in cast these are dark
             changeCardStatuses();
 
             // After drawing, user can pass
             // FIXME is that true after +2 or +4?
             pass.style.visibility = "visible";
-
-            // User drew cards, any +2 or +4 values are gone
-            p2_value = 0; p4_value = 0;
         } else if (msg.startsWith("START")) {
             // Game started, replace Start Game button with Draw Card
             baseCard.removeEventListener("click", startGame);
@@ -282,6 +297,10 @@
         } else if (msg.startsWith("DREW:")) {
             // Add the number of drawn cards to the user's count
             numCards[currUserId] += parseInt(msg.substring(5));
+
+            // There is no p2 or p4 at this time
+            p2_value = 0;
+            p4_value = 0;
         } else {
             // Just print the message
             console.log(msg);
