@@ -2,9 +2,7 @@
     <link rel="stylesheet" href="{{url_for('static', filename='style/gameRoom.css')}}">
 </head>
 
-<div id="card-container">
-    <p id="pass">pass</p>
-</div>
+<div id="card-container"></div>
 <div id="player-container"></div>
 <div id="table-container">
     <div id="deck-container"></div>
@@ -29,12 +27,7 @@
     let playerContainer = document.getElementById("player-container");
     let opposingPlayerContainer = document.getElementById("opposing-player-container");
     let deckContainer = document.getElementById("deck-container");
-    let pass = document.getElementById("pass");
     let colorPicker = document.getElementById("color-picker");
-
-    pass.addEventListener("click", () => {
-        broadcast("pass");
-    });
 
     let colorPickerCorners = colorPicker.children;
     for (let colorElement of colorPickerCorners) {
@@ -267,13 +260,19 @@
 
             // After drawing, user can pass
             // FIXME is that true after +2 or +4?
-            pass.style.visibility = "visible";
+            baseCard.src = "{{url_for('static', filename='UnoCards/PassBack.png')}}";
         } else if (msg.startsWith("START")) {
             // Game started, replace Start Game button with Draw Card
             baseCard.removeEventListener("click", startGame);
             baseCard.src = "{{url_for('static', filename='UnoCards/DrawBack.png')}}";
             baseCard.addEventListener("click", () => {
-                broadcast("draw").then((response) => {
+                // A bit messy, determine what to send based on image src
+                let msg = "pass";
+                if (baseCard.src.includes("Draw")) {
+                    msg = "draw";
+                }
+
+                broadcast(msg).then((response) => {
                     if (!response.ok) {
                         // There was a 404! Print it to the console
                         console.log("Error when drawing card: 404");
@@ -283,7 +282,7 @@
         } else if (msg.startsWith("TURN:")) {
             // FIXME here we will check if its my turn etc
             // Hide the pass option
-            pass.style.visibility = "hidden";
+            baseCard.src = "{{url_for('static', filename='UnoCards/DrawBack.png')}}";
             currUserId = parseInt(msg.substring(5));
 
             changeCardStatuses();

@@ -19,9 +19,6 @@ body {
     max-height:200px;
     background-color:rgba(0, 0, 0, 0.253);
 
-    overflow-x:scroll;
-    overflow-y:hidden;
-
     display: flex;
     align-items: center;
     justify-content: center;
@@ -33,7 +30,7 @@ body {
 }
   
 /* Hide scrollbar for IE, Edge and Firefox */
-  #card-container {
+#card-container {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
 }
@@ -47,9 +44,6 @@ body {
     width:20%;
     max-width:200px;
     background-color:rgba(75, 75, 75, 0.5);
-
-    overflow-x:hidden;
-    overflow-y:scroll;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
@@ -125,15 +119,20 @@ body {
     max-height:100%;
 }
 
-#pass {
-    /* The text dialogue for passing */
-    visibility:hidden;
-    font-family:Verdana, Geneva, Tahoma, sans-serif;
-    position:absolute;
-    top:0;
-    right:10;
-    color:white;
-    cursor:pointer;
+/* Glow effect: https://codersblock.com/blog/creating-glow-effects-with-css/ */
+#card-container .uno-card:only-child {
+    filter:brightness(100%); /* Override the darkness of the card */
+    box-shadow:
+    0 0 60px 30px #fff,  /* inner white */
+    0 0 100px 60px #f0f, /* middle magenta */
+    0 0 140px 90px #0ff; /* outer cyan */
+}
+
+#opposing-player-container .uno-card:only-child {
+    box-shadow:
+    0 0 60px 30px #fff,  /* inner white */
+    0 0 100px 60px #f0f, /* middle magenta */
+    0 0 140px 90px #0ff; /* outer cyan */
 }
 
 .dark {
