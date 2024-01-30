@@ -56,7 +56,6 @@
         // "hard-pressed"... Get it?
         // Card was pressed, send off to server
         let cardValue = e.target.name;
-        console.log(cardValue);
         broadcast(cardValue).then((response) => {
             if (response.ok) {
                 // Card was played! Remove card from viewer
@@ -109,6 +108,92 @@
         }
     }
 
+    function handleServerMsg(msg) {
+        if (msg.startsWith("CARDS:")) {
+            // The rest of the string is our cards. 
+            let cards = JSON.parse(msg.substring(6));
+            for (var i = 0; i < cards.length; i++) {
+                let card = getCard(cards[i], true);
+                cardContainer.appendChild(card);
+                opposingPlayerContainer.appendChild(getCard("back", false));
+            }
+
+            // Loop through each numCards element, and set their cards to the number of cards we got
+            for (var id in numCards) {
+                numCards[id] = cards.length;
+            }
+
+        } else if (msg.startsWith("CARD:")) {
+            // The current card was changed
+            let cardName = msg.substring(5);
+            let card = getCard(cardName, false);
+            currentCardContainer.innerHTML = "";
+            currentCardContainer.appendChild(card);
+
+            // Decrement the current user's count, if the game is active
+            // (Dont decrement count if this card is the starting card)
+            // Also, dont decrement if the card is virtual (a colored wild card)
+            if (currUserId != -1 && !["yw", "gw", "bw", "rw", "yp", "gp", "bp", "rp"].includes(cardName)) {
+                numCards[currUserId] -= 1;
+            }
+        } else if (msg.startsWith("DRAW:")) {
+            // The rest of the string is a list of cards we draw
+            let cards = JSON.parse(msg.substring(5));
+            for (var i = 0; i < cards.length; i++) {
+                let card = getCard(cards[i], true);
+                cardContainer.appendChild(card);
+            }
+
+            // Add the number of drawn cards to the count keeper
+            numCards[myId] += cards.length;
+
+            // After drawing, user can pass
+            // FIXME is that true after +2 or +4?
+            pass.style.visibility = "visible";
+
+            // User drew cards, any +2 or +4 values are gone
+            p2_value = 0; p4_value = 0;
+        } else if (msg.startsWith("START")) {
+            // Game started, replace Start Game button with Draw Card
+            baseCard.removeEventListener("click", startGame);
+            baseCard.src = "{{url_for('static', filename='UnoCards/DrawBack.png')}}";
+            baseCard.addEventListener("click", () => {
+                broadcast("draw").then((response) => {
+                    if (!response.ok) {
+                        // There was a 404! Print it to the console
+                        console.log("Error when drawing card: 404");
+                    }
+                })
+            });
+        } else if (msg.startsWith("TURN:")) {
+            // FIXME here we will check if its my turn etc
+            // Hide the pass option
+            pass.style.visibility = "hidden";
+            currUserId = parseInt(msg.substring(5));
+
+        } else if (msg.startsWith("USER:")) {
+            // Theres a new user, save their number of cards
+            // Here, we save number of cards as -1, they will be overwritten when we get our cards
+            let [uname, id] = msg.substring(5).split("/");
+            idToUserName[id] = uname;
+            numCards[id] = -1;
+        } else if (msg.startsWith("DREW:")) {
+            // Add the number of drawn cards to the user's count
+            numCards[currUserId] += parseInt(msg.substring(5));
+        } else {
+            // Just print the message
+            console.log(msg);
+        }
+
+        // Update the opposing player view, if its not my turn (keep previous player up otherwise)
+        if (currUserId != myId) {
+            updateOpposingPlayerWindow();
+        }
+
+        // Update the player stats to the left
+        updatePlayerStats();
+    }
+
     function checkForUpdate() {
         // Ping the server for an update
         // If there are updates, loop every .5 seconds updating as we go
@@ -117,91 +202,7 @@
                 let msgs = JSON.parse(text);
                 for (var i = 0; i < msgs.length; i++) {
                     let msg = msgs[i];
-                    setTimeout(() => {
-                        if (msg.startsWith("CARDS:")) {
-                            // The rest of the string is our cards. 
-                            let cards = JSON.parse(msg.substring(6));
-                            for (var i = 0; i < cards.length; i++) {
-                                let card = getCard(cards[i], true);
-                                cardContainer.appendChild(card);
-                                opposingPlayerContainer.appendChild(getCard("back", false));
-                            }
-
-                            // Loop through each numCards element, and set their cards to the number of cards we got
-                            for (var id in numCards) {
-                                numCards[id] = cards.length;
-                            }
-
-                        } else if (msg.startsWith("CARD:")) {
-                            // The current card was changed
-                            let cardName = msg.substring(5);
-                            let card = getCard(cardName, false);
-                            currentCardContainer.innerHTML = "";
-                            currentCardContainer.appendChild(card);
-
-                            // Decrement the current user's count, if the game is active
-                            // (Dont decrement count if this card is the starting card)
-                            // Also, dont decrement if the card is virtual (a colored wild card)
-                            if (currUserId != -1 && !["yw", "gw", "bw", "rw", "yp", "gp", "bp", "rp"].includes(cardName)) {
-                                numCards[currUserId] -= 1;
-                            }
-                        } else if (msg.startsWith("DRAW:")) {
-                            // The rest of the string is a list of cards we draw
-                            let cards = JSON.parse(msg.substring(5));
-                            for (var i = 0; i < cards.length; i++) {
-                                let card = getCard(cards[i], true);
-                                cardContainer.appendChild(card);
-                            }
-
-                            // Add the number of drawn cards to the count keeper
-                            numCards[myId] += cards.length;
-
-                            // After drawing, user can pass
-                            // FIXME is that true after +2 or +4?
-                            pass.style.visibility = "visible";
-
-                            // User drew cards, any +2 or +4 values are gone
-                            p2_value = 0; p4_value = 0;
-                        } else if (msg.startsWith("START")) {
-                            // Game started, replace Start Game button with Draw Card
-                            baseCard.removeEventListener("click", startGame);
-                            baseCard.src = "{{url_for('static', filename='UnoCards/DrawBack.png')}}";
-                            baseCard.addEventListener("click", () => {
-                                broadcast("draw").then((response) => {
-                                    if (!response.ok) {
-                                        // There was a 404! Print it to the console
-                                        console.log("Error when drawing card: 404");
-                                    }
-                                })
-                            });
-                        } else if (msg.startsWith("TURN:")) {
-                            // FIXME here we will check if its my turn etc
-                            // Hide the pass option
-                            pass.style.visibility = "hidden";
-                            currUserId = parseInt(msg.substring(5));
-
-                        } else if (msg.startsWith("USER:")) {
-                            // Theres a new user, save their number of cards
-                            // Here, we save number of cards as -1, they will be overwritten when we get our cards
-                            let [uname, id] = msg.substring(5).split("/");
-                            idToUserName[id] = uname;
-                            numCards[id] = -1;
-                        } else if (msg.startsWith("DREW:")) {
-                            // Add the number of drawn cards to the user's count
-                            numCards[currUserId] += parseInt(msg.substring(5));
-                        } else {
-                            // Just print the message
-                            console.log(msg);
-                        }
-
-                        // Update the opposing player view, if its not my turn (keep previous player up otherwise)
-                        if (currUserId != myId) {
-                            updateOpposingPlayerWindow();
-                        }
-
-                        // Update the player stats to the left
-                        updatePlayerStats();
-                    }, 500 * i);
+                    handleServerMsg(msg);
                 }
         }));
     }
