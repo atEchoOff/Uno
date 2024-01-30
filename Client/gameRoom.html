@@ -47,6 +47,34 @@
         return card;
     }
 
+    function cardCompare(card1, card2) {
+        if (card1.name.startsWith("w") && card2.name.startsWith("w")) {
+            return card1.name < card2.name;
+        } else if (card1.name.startsWith("w")) {
+            return 1;
+        } else if (card2.name.startsWith("w")) {
+            return 0;
+        } else {
+            return card1.name < card2.name;
+        }
+    }
+
+    function addCard(card) {
+        // Insert a card into the card viewer alphabetically
+        let curCard = cardContainer.firstChild;
+        while (curCard && curCard.name && cardCompare(curCard, card)) {
+            curCard = curCard.nextSibling;
+        }
+
+        if (curCard) {
+            // Our card should go just before this one
+            cardContainer.insertBefore(card, curCard);
+        } else {
+            // We hit the end of the list, or the list was empty. Append to the end
+            cardContainer.appendChild(card);
+        }
+    }
+
     function startGame() {
         // Tell the server to close the game entry and start
         fetch('{{url_for("start_game", room_name=room_name)}}');
@@ -114,7 +142,7 @@
             let cards = JSON.parse(msg.substring(6));
             for (var i = 0; i < cards.length; i++) {
                 let card = getCard(cards[i], true);
-                cardContainer.appendChild(card);
+                addCard(card);
                 opposingPlayerContainer.appendChild(getCard("back", false));
             }
 
@@ -141,7 +169,7 @@
             let cards = JSON.parse(msg.substring(5));
             for (var i = 0; i < cards.length; i++) {
                 let card = getCard(cards[i], true);
-                cardContainer.appendChild(card);
+                addCard(card);
             }
 
             // Add the number of drawn cards to the count keeper
