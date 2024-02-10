@@ -153,6 +153,22 @@ def user_broadcast(room_name):
     # The user is trying to take a turn
     room = Utils.room(room_name)
     room_player = Utils.room_player(session, room)
+
+    if request.args.get("msg") == "NEWGAME":
+        # User is requesting a new game! We purge the room from the database
+        # copy to a new room, and broadcast a message to send all players to a new room
+
+        # Refresh the room stats
+        room.turn = 0
+        room.current_card = None
+        room.active = False
+        room.p2_value = 0
+        room.p4_value = 0
+        room.orientation = 1
+        
+        # Tell everyone to join the new room!
+        Utils.broadcast(room, ["NEWGAME"], commit=True)
+        return ""
     
     # First, make sure the user can do that (its their turn)
     if room_player.id == room.players[room.turn].id:
