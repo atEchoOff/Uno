@@ -43,6 +43,9 @@ class Room(db.Model):
     # Setting for if foreign cards (skip, reverse) are allowed on a plus 4 while stacking
     p4_allow_foreign: Mapped[bool] = mapped_column(nullable=False, default=False)
 
+    # Increase the changes of getting wild or special cards
+    wild: Mapped[bool] = mapped_column(nullable=False, default=False)
+
     # Save the orientation of the game
     orientation: Mapped[int] = mapped_column(nullable=False, default=1)
 

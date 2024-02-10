@@ -37,7 +37,12 @@ def home():
                 # User wants to create room. First, make sure the room doesnt exist
                 if not Utils.room_exists(room_name):
                     # Room doesnt exist, create it!
-                    room = Utils.create_room(room_name)
+                    p2_stack = True if "p2stack" in request.form and request.form["p2stack"] == "on" else False
+                    p2_allow_foreign = True if "p2foreign" in request.form and request.form["p2foreign"] == "on" else False
+                    p4_stack = True if "p4stack" in request.form and request.form["p4stack"] == "on" else False
+                    p4_allow_foreign = True if "p4foreign" in request.form and request.form["p4foreign"] == "on" else False
+                    wild = True if "wild" in request.form and request.form["wild"] == "on" else False
+                    room = Utils.create_room(room_name, p2_stack, p2_allow_foreign, p4_stack, p4_allow_foreign, wild)
 
                     # Now, add the user
                     Utils.room_player(session, room, _404=False, name=user_name)
@@ -86,7 +91,13 @@ def game_room(room_name):
     # Tell the new user all the players currently in the room
     Utils.broadcast(player, [f"USER:{_player.name}/{_player.id}" for _player in room.players])
 
-    return render_template("gameRoom.html", room_name=room_name, id=player.id)
+    return render_template("gameRoom.html", room_name=room_name, 
+                                            id=player.id, 
+                                            p2_allow_foreign=int(room.p2_allow_foreign), 
+                                            p4_allow_foreign=int(room.p4_allow_foreign), 
+                                            p2_stack=int(room.p2_stack), 
+                                            p4_stack=int(room.p4_stack),
+                                            wild=int(room.wild))
 
 @app.route('/start_game/<room_name>')
 def start_game(room_name):
@@ -99,12 +110,12 @@ def start_game(room_name):
 
         # Give everyone a deck
         for player in room.players:
-            deck = [Uno.random_card() for _ in range(7)]
+            deck = [Uno.random_card(room) for _ in range(7)]
             player.deck = deck
             Utils.broadcast(player, ["CARDS:" + json.dumps(deck)], commit=False)
 
         # Tell everyone the game has started, the current card, and who is up
-        room.current_card = Uno.random_card(numerical_only=True)
+        room.current_card = Uno.random_card(room, numerical_only=True)
         Utils.broadcast(room, ["START", f"CARD:{room.current_card}", f"TURN:{room.players[room.turn].id}"])
         return ""
     else:

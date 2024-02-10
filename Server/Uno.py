@@ -9,12 +9,17 @@ numerical_cards = [suit + val for suit in "rgby" for val in "0112233445566778899
 special_cards = [suit + val for suit in "rgby" for val in "++ssrr"]
 wild_cards = ["w" + val for val in "wwwwpppp"] # ww is wild, wp is wild plus four
 
-def random_card(numerical_only=False):
+def random_card(room, numerical_only=False):
     # Return a random uno card
     if numerical_only:
         return random.choice(numerical_cards)
-    
-    card_num = random.randint(0, 107)
+
+    # Randomly, if the game is wild, choose not to give a numerical card
+    if room.wild and random.randint(0, 6) == 0:
+        card_num = random.randint(len(numerical_cards), 107) # skip the numerical cards
+    else:
+        card_num = random.randint(0, 107)
+
     if card_num < len(numerical_cards):
         return numerical_cards[card_num]
     
@@ -70,7 +75,7 @@ def draw_cards(room):
         room.p4_value = 0
 
     # Get random cards and send off to the user
-    return [random_card() for _ in range(draw_amt)]
+    return [random_card(room) for _ in range(draw_amt)]
 
 def next_turn(room):
     # Move a room to the next turn

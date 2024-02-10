@@ -20,6 +20,29 @@
         <input type="text" class="form-control" id="user-name-input" name="user-name" placeholder="Enter Name" required>
         <span id="user-name-error" class="text-danger">{{ user_name_error }}</span>
       </div>
+      <div>
+        <p>Game room settings (These settings only apply if you are creating a room):</p>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="p2stack" name="p2stack">
+          <label class="form-check-label" for="p2stack"><b>Cumulative +2: </b>When a +2 is played on a +2, the next player draws +4, etc.</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="p2foreign" name="p2foreign">
+          <label class="form-check-label" for="p2foreign"><b>+2 Dodging: </b>A reverse on a +2 hands the +2 to the next player, a skip cancells it, and moves to the next player. Color is irrelevant.</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="p4stack" name="p4stack">
+          <label class="form-check-label" for="p4stack"><b>Cumulative +4: </b>When a +4 is played on a +4, the next player draws +8, etc.</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="p4foreign" name="p4foreign">
+          <label class="form-check-label" for="p4foreign"><b>+4 Dodging: </b>A reverse on a +4 hands the +4 to the next player, a skip cancells it, and moves to the next player. Color is irrelevant.</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="wild" name="wild">
+          <label class="form-check-label" for="wild"><b>Super Wild: </b>Increase the chances of getting wild or special cards.</label>
+        </div>
+      </div>
       <button type="submit" class="btn btn-primary" name="action" value="Create">Create Room</button>
       <button type="submit" class="btn btn-success" name="action" value="Join">Join Room</button>
     </form>

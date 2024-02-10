@@ -20,10 +20,15 @@ def room_exists(room_name):
     return Room.query.filter_by(name=room_name)\
                      .count() != 0
 
-def create_room(room_name):
+def create_room(room_name, p2_stack, p2_allow_foreign, p4_stack, p4_allow_foreign, wild):
     # Create a room with given name and return it
     room = Room()
     room.name = room_name
+    room.p2_stack = p2_stack
+    room.p2_allow_foreign = p2_allow_foreign
+    room.p4_stack = p4_stack
+    room.p4_allow_foreign = p4_allow_foreign
+    room.wild = wild
     db.session.add(room)
     return room
 

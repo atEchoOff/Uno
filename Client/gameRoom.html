@@ -41,8 +41,11 @@
     let p2_value = 0;
     let p4_value = 0;
     let currUserId = -1;
-    let p2_allow_foreign = 0;
-    let p4_allow_foreign = 0; // FIXME impliment this
+    let p2_allow_foreign = {{ p2_allow_foreign }};
+    let p4_allow_foreign = {{ p4_allow_foreign }};
+    let p2_stack = {{ p2_stack }};
+    let p4_stack = {{ p4_stack }};
+    let super_wild = {{ wild }};
 
     function getCard(cardName, interactable) {
         // Return an element with specific cardName (image)
@@ -169,7 +172,7 @@
         if (p2_value > 0) {
             // A +2 is in action
             if (p2_allow_foreign) {
-                return Set("r", "+", "s").includes(card_val);
+                return "r+s".includes(card_val);
             } else {
                 return card_val == "+";
             }
@@ -178,7 +181,7 @@
         if (p4_value > 0) {
             // A +4 is in action
             if (p4_allow_foreign) {
-                return Set("r", "p", "s").includes(card_val);
+                return "rps".includes(card_val);
             } else {
                 return card_val == "p";
             }
@@ -209,6 +212,7 @@
         if (msg.startsWith("CARDS:")) {
             // The rest of the string is our cards. 
             let cards = JSON.parse(msg.substring(6));
+            opposingPlayerContainer.innerHTML = "";
             for (var i = 0; i < cards.length; i++) {
                 let card = getCard(cards[i], true);
                 addCard(card);
@@ -233,6 +237,13 @@
             } else if (cardName.endsWith("p")) {
                 // +4
                 p4_value += 4
+            } else if (cardName.endsWith("s")) {
+                // Whether allow foreign is on or off, this means theres no more +2 or +4
+                // If allow foreign is off, them playing this card means there is no +2 or +4
+                // (It means nothing because +2 and +4 should already be off)
+                // If allow foreign is on, a skip gets rid of +2 and +4
+                p2_value = 0;
+                p4_value = 0;
             }
 
             // Decrement the current user's count, if the game is active
