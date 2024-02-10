@@ -184,6 +184,10 @@
             } else {
                 div.innerText = `${uname}: ${numCards[id]}`;
             }
+            if (currUserId != -1 && numCards[id] <= 1) {
+                // This player has uno (or won) and the game is on
+                div.classList.add("glow");
+            }
             playerContainer.appendChild(div);
         }
     }

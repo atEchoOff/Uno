@@ -159,7 +159,8 @@ def user_broadcast(room_name):
         # copy to a new room, and broadcast a message to send all players to a new room
 
         # Refresh the room stats
-        room.turn = 0
+        # Dont reset turn. This is a lazy way of making sure the next player after the winner goes
+        # The only way this wont work if if the winner played a reverse or a skip
         room.current_card = None
         room.active = False
         room.p2_value = 0
