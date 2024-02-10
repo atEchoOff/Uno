@@ -174,15 +174,17 @@
         // At the beginning of the game, dont show the internal "-1" cards, thats ugly
         playerContainer.innerHTML = "";
         for (let [id, uname] of Object.entries(idToUserName)) {
-            let p = document.createElement("p");
+            let div = document.createElement("div");
+            div.classList.add("player-bar");
             if (currUserId == -1) {
-                p.innerText = `${uname}`;
+                div.innerText = `${uname}`;
             } else if (currUserId == id) {
-                p.innerHTML = `<b>${uname}: ${numCards[id]}</b>`;
+                div.innerText = `${uname}: ${numCards[id]}`;
+                div.style.backgroundColor = "#96be25";
             } else {
-                p.innerText = `${uname}: ${numCards[id]}`;
+                div.innerText = `${uname}: ${numCards[id]}`;
             }
-            playerContainer.appendChild(p);
+            playerContainer.appendChild(div);
         }
     }
 

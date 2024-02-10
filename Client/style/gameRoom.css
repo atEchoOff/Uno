@@ -1,13 +1,13 @@
 body {
     margin:0;
     padding:0;
-  background: linear-gradient(45deg, green, transparent 50%, transparent),
-              linear-gradient(135deg, red, transparent 50%, transparent),
-              linear-gradient(-135deg, blue, transparent 50%, transparent),
-              linear-gradient(-45deg, yellow, transparent 50%, transparent);
-  background-blend-mode: overlay;
-  background-size: 100% 100%;
-  background-position: top left, top right, bottom right, bottom left, center center;
+    background: linear-gradient(45deg, green, transparent 50%, transparent),
+                linear-gradient(135deg, red, transparent 50%, transparent),
+                linear-gradient(-135deg, blue, transparent 50%, transparent),
+                linear-gradient(-45deg, yellow, transparent 50%, transparent);
+    background-blend-mode: overlay;
+    background-size: 100% 100%;
+    background-position: top left, top right, bottom right, bottom left, center center;
 }
 
 #card-container {
@@ -224,4 +224,17 @@ body {
     border: 1px solid #888;
     width: 80%;
     max-width: 450px; /* Could be more or less, depending on screen size */
+}
+
+.player-bar {
+    background-color: #00000079;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    color:rgba(255, 255, 255);
+    text-align:left;
+    width: 80%;
+    margin-top:5px;
+    margin-bottom:5px;
+    padding:5px;
+    font-weight:bolder;
 }
