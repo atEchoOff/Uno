@@ -107,6 +107,13 @@ def play_card(room, room_player, move):
             room.p2_value += 2
         elif room.p2_allow_foreign and card_value == "s":
             room.p2_value = 0
+        elif room.p2_allow_foreign and card_value == "r":
+            # A reverse was played!
+            if len(room.players) == 2:
+                # This is a 2-player game, so instead just skip
+                room.turn += room.orientation
+            else:
+                room.orientation *= -1
         
     elif room.p4_value > 0:
         # A +4 is down, figure out the new value based on what they played
@@ -114,6 +121,13 @@ def play_card(room, room_player, move):
             room.p4_value += 4
         elif room.p4_allow_foreign and card_value == "s":
             room.p4_value = 0
+        elif room.p4_allow_foreign and card_value == "r":
+            # A reverse was played!
+            if len(room.players) == 2:
+                # This is a 2-player game, so instead just skip
+                room.turn += room.orientation
+            else:
+                room.orientation *= -1
 
     else:
         # There is no value, the game is normal
