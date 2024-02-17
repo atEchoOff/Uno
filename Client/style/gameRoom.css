@@ -9,6 +9,9 @@ body {
     background-size: 100% 100%;
     background-position: top left, top right, bottom right, bottom left, center center;
     overflow:hidden;
+    transition-property: background-color;
+    transition-timing-function:ease;
+    transition-duration:.5s;
 }
 
 #card-container {

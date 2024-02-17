@@ -282,6 +282,24 @@
             currentCardContainer.innerHTML = "";
             currentCardContainer.appendChild(card);
 
+            // Change background color to correspond with current suit
+            switch (cardName[0] /* the color */) {
+                case "r":
+                    document.body.style.backgroundColor = "#d40000";
+                    break;
+                case "g":
+                    document.body.style.backgroundColor = "#2ca05a";
+                    break;
+                case "b":
+                    document.body.style.backgroundColor = "#2a7fff";
+                    break;
+                case "y":
+                    document.body.style.backgroundColor = "#ffcc00";
+                    break;
+                default:
+                    document.body.style.backgroundColor = ""; // Reset to colorful background
+            }
+
             if (cardName.endsWith("+")) {
                 // +2
                 p2_value += 2
