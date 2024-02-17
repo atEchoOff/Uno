@@ -135,21 +135,29 @@
         // "hard-pressed"... Get it?
         // Card was pressed, send off to server
         let cardValue = e.target.name;
-        broadcast(cardValue).then((response) => {
-            if (response.ok) {
-                // Card was played! Remove card from viewer
-                e.target.remove();
-            } else if (response.status == 418) {
-                // Server is waiting for wild color, show the color picker
-                colorPicker.style.visibility = "visible";
+        if (cardCanBePlayed(cardValue)) {
+            // Show my card immediately, makes it appear snappier
+            let card = getCard(cardValue, false);
+            currentCardContainer.innerHTML = "";
+            currentCardContainer.appendChild(card);
 
-                // Remove the wild card, we are done with it
-                e.target.remove();
-            } else {
-                // There was a 404! Print it to the consone
-                console.log("Error when pressing card: 404");
-            }
-        })
+            // Now tell the server
+            broadcast(cardValue).then((response) => {
+                if (response.ok) {
+                    // Card was played! Remove card from viewer
+                    e.target.remove();
+                } else if (response.status == 418) {
+                    // Server is waiting for wild color, show the color picker
+                    colorPicker.style.visibility = "visible";
+
+                    // Remove the wild card, we are done with it
+                    e.target.remove();
+                } else {
+                    // There was a 404! Print it to the consone
+                    console.log("Error when pressing card: 404");
+                }
+            });
+        }
     }
 
     function updateOpposingPlayerWindow() {

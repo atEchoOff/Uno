@@ -15,7 +15,7 @@ def random_card(room, numerical_only=False):
         return random.choice(numerical_cards)
 
     # Randomly, if the game is wild, choose not to give a numerical card
-    if room.wild and random.randint(0, 6) == 0:
+    if room.wild and random.randint(0, 4) == 0:
         card_num = random.randint(len(numerical_cards), 107) # skip the numerical cards
     else:
         card_num = random.randint(0, 107)
@@ -109,10 +109,8 @@ def play_card(room, room_player, move):
             room.p2_value = 0
         elif room.p2_allow_foreign and card_value == "r":
             # A reverse was played!
-            if len(room.players) == 2:
-                # This is a 2-player game, so instead just skip
-                room.turn += room.orientation
-            else:
+            if len(room.players) != 2:
+                # Only reverse +2 to previous player if not a 2 player game (otherwise we +2 ourselves)
                 room.orientation *= -1
         
     elif room.p4_value > 0:
@@ -123,10 +121,8 @@ def play_card(room, room_player, move):
             room.p4_value = 0
         elif room.p4_allow_foreign and card_value == "r":
             # A reverse was played!
-            if len(room.players) == 2:
-                # This is a 2-player game, so instead just skip
-                room.turn += room.orientation
-            else:
+            if len(room.players) != 2:
+                # Only reverse +4 to previous player if not a 2 player game (otherwise we +4 ourselves)
                 room.orientation *= -1
 
     else:
