@@ -273,6 +273,7 @@
 
             // Loop through each numCards element, and set their cards to the number of cards we got
             for (var id in numCards) {
+                console.log("Setting cards", cards.length);
                 numCards[id] = cards.length;
             }
 
@@ -336,6 +337,7 @@
             }
 
             // Add the number of drawn cards to the count keeper
+            console.log("Setting cards", cards.length);
             numCards[myId] += cards.length;
 
             // User drew cards, any +2 or +4 values are gone
@@ -381,6 +383,7 @@
             numCards[id] = -1;
         } else if (msg.startsWith("DREW:")) {
             // Add the number of drawn cards to the user's count
+            console.log("Settings cards", msg.substring(5));
             numCards[currUserId] += parseInt(msg.substring(5));
 
             // There is no p2 or p4 at this time
