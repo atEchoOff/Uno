@@ -260,6 +260,7 @@
     }
 
     function handleServerMsg(msg) {
+        console.log(msg);
         if (msg.startsWith("CARDS:")) {
             // The rest of the string is our cards. 
             let cards = JSON.parse(msg.substring(6));
